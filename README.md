@@ -1,10 +1,25 @@
 # Miscellaneous Helpers for PHP and Laravel
 
-[![Build Status](https://travis-ci.org/halaei/helpers.svg)](https://travis-ci.org/halaei/helpers)
+[![Tests](https://github.com/halaei/helpers/actions/workflows/tests.yml/badge.svg)](https://github.com/halaei/helpers/actions/workflows/tests.yml)
 [![Latest Stable Version](https://poser.pugx.org/halaei/helpers/v/stable)](https://packagist.org/packages/halaei/helpers)
 [![Total Downloads](https://poser.pugx.org/halaei/helpers/downloads)](https://packagist.org/packages/halaei/helpers)
 [![Latest Unstable Version](https://poser.pugx.org/halaei/helpers/v/unstable)](https://packagist.org/packages/halaei/helpers)
 [![License](https://poser.pugx.org/halaei/helpers/license)](https://packagist.org/packages/halaei/helpers)
+
+## Requirements
+
+| Version | PHP | Laravel |
+|---------|-----|---------|
+| **^2.0** | ^8.1 | 10, 11, 12, 13 |
+| ^0.9 / ^1.0 | 7.4+ | 8, 9 |
+
+```bash
+composer require halaei/helpers:^2.0
+```
+
+### Upgrading from v0.9 / v1.0
+
+v2.0 preserves the public API. Update `composer.json` to `^2.0` and ensure PHP 8.1+. If you use `db:restore-dump` or Redis locks with phpredis, no code changes are required — Flysystem 3 and phpredis compatibility are handled internally. See [docs/laravel-13-migration-plan.md](docs/laravel-13-migration-plan.md) for the full checklist.
 
 ## About this Package
 This is a collection of miscellanous utilities gathered in one package for you:
@@ -253,7 +268,7 @@ while (! $lock->lock('critical_section', 0.1) {}
 // 2. Do some critical job
 //...
 // 3. Release the lock
-$lock->unlock('critical_section', 0.1);
+$lock->unlock('critical_section');
 ```
 
 ### Process
@@ -325,6 +340,45 @@ $crypt = new NumCrypt('9876543210abcdef', 0 /*dont XOR*/);
 echo $crypt->encrypt(16, 0 /*no padding*/); // 89
 echo $crypt->decrypt('999989'); // 36
 ```
+
+## Testing
+
+### Local (Windows / macOS)
+
+Requires PHP 8.1+ and Composer. Uses SQLite by default; Redis, MySQL, `pcntl`, and Process tests are skipped via `phpunit.xml` groups.
+
+```bash
+composer install
+vendor/bin/phpunit
+```
+
+On Windows, use PHP 8.1+ from [Laravel Herd](https://herd.laravel.com/) or similar (`php84 vendor/bin/phpunit`).
+
+### Docker (full suite)
+
+Linux container with PHP 8.3, Redis 7, MySQL 8, `pcntl`, `pcov`, and the `unix` / `redis` test groups via `phpunit.docker.xml`.
+
+```bash
+docker compose run --rm test
+docker compose run --rm test --testsuite Contract
+docker compose run --rm test --coverage-text
+docker compose run --rm --entrypoint bash test scripts/check-coverage.sh
+```
+
+### CI
+
+GitHub Actions runs a **Laravel 10–13 matrix** (with Redis) plus a **100% coverage gate** on PHP 8.3. Locally:
+
+```bash
+composer test:coverage   # requires Linux, pcov, Redis, MySQL (see docker compose)
+```
+
+| Service | Image | Purpose |
+|---------|-------|---------|
+| `test` | `docker/Dockerfile` | PHPUnit + Composer |
+| `redis` | `redis:7-alpine` | Redis lock tests |
+| `mysql` | `mysql:8.0` | `insertIgnore` macro tests |
+
 
 ## License
 This package is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)

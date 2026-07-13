@@ -9,18 +9,31 @@ use Predis\ClientInterface;
 class Lock
 {
     /**
-     * @var ClientInterface
+     * @var ClientInterface|PhpRedisLockClient
      */
     protected $redis;
 
-    public function __construct(ClientInterface $redis)
+    /**
+     * @param  ClientInterface|PhpRedisLockClient  $redis
+     */
+    public function __construct($redis)
     {
+        if (! $redis instanceof ClientInterface && ! $redis instanceof PhpRedisLockClient) {
+            throw new \InvalidArgumentException('Lock requires a Predis ClientInterface or phpredis client from Lock::instance().');
+        }
+
         $this->redis = $redis;
     }
 
     public static function instance($connection = null)
     {
-        return new static(app(RedisManager::class)->connection($connection)->client());
+        $client = app(RedisManager::class)->connection($connection)->client();
+
+        if ($client instanceof ClientInterface) {
+            return new static($client);
+        }
+
+        return new static(new PhpRedisLockClient($client));
     }
 
     /**

@@ -75,7 +75,7 @@ trait HasCastables
         }
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         unset($this->castedAttributes[$offset]);
 

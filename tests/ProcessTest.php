@@ -4,8 +4,10 @@ namespace HalaeiTests;
 
 use Halaei\Helpers\Process\Process;
 use Halaei\Helpers\Process\ProcessException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('unix')]
 class ProcessTest extends TestCase
 {
     private static $randPath;
@@ -149,5 +151,190 @@ class ProcessTest extends TestCase
     {
         $process = new Process(['echo', 'hello'], null, null, null, null);
         $this->assertSame(0, $process->mustRun()->exitCode);
+    }
+
+    public function test_must_run_throws_when_process_cannot_start()
+    {
+        $process = new class(['echo', 'ok']) extends Process {
+            protected function start()
+            {
+                return false;
+            }
+        };
+
+        try {
+            $process->mustRun();
+            $this->fail('Expected ProcessException was not thrown');
+        } catch (ProcessException $e) {
+            $this->assertSame(ProcessException::CODE_START_ERROR, $e->getCode());
+        }
+    }
+
+    public function test_run_returns_null_when_start_fails()
+    {
+        $process = new class(['echo', 'ok']) extends Process {
+            protected function start()
+            {
+                return false;
+            }
+        };
+
+        $this->assertNull($process->run());
+    }
+
+    public function test_start_returns_false_when_proc_open_fails_with_invalid_cwd(): void
+    {
+        if (PHP_VERSION_ID < 80300) {
+            $this->markTestSkipped('proc_open returns false for invalid cwd only since PHP 8.3');
+        }
+
+        $process = new Process(['echo', 'ok'], '/definitely/missing/directory');
+
+        $start = new \ReflectionMethod($process, 'start');
+        $start->setAccessible(true);
+
+        $this->assertFalse($start->invoke($process));
+    }
+
+    public function test_must_run_throws_when_process_times_out()
+    {
+        $process = new Process(['sleep', '5'], null, null, null, 1);
+
+        try {
+            $process->mustRun();
+            $this->fail('Expected ProcessException was not thrown');
+        } catch (ProcessException $e) {
+            $this->assertSame(ProcessException::CODE_TIMEOUT_ERROR, $e->getCode());
+            $this->assertTrue($e->result->timedOut);
+        }
+    }
+
+    #[Group('windows')]
+    public function test_escape_argument_quotes_windows_special_characters()
+    {
+        if (DIRECTORY_SEPARATOR !== '\\') {
+            $this->markTestSkipped('Windows-only escapeArgument branch');
+        }
+
+        $method = new \ReflectionMethod(Process::class, 'escapeArgument');
+        $method->setAccessible(true);
+
+        $this->assertSame('"^&"', $method->invoke(null, '&'));
+        $this->assertSame('"a^^b"', $method->invoke(null, 'a^b'));
+    }
+
+    public function test_kill_invokes_terminate_process_hook(): void
+    {
+        $process = new class(['sleep', '1']) extends Process {
+            public bool $terminated = false;
+
+            protected function kill($status = 0)
+            {
+                $this->terminated = true;
+            }
+        };
+
+        $reflection = new \ReflectionMethod($process, 'kill');
+        $reflection->setAccessible(true);
+        $reflection->invoke($process, 1);
+
+        $this->assertTrue($process->terminated);
+    }
+
+    public function test_escape_argument_quotes_empty_values_on_unix(): void
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Unix-only escapeArgument branch');
+        }
+
+        $method = new \ReflectionMethod(Process::class, 'escapeArgument');
+        $method->setAccessible(true);
+
+        $this->assertSame('""', $method->invoke(null, ''));
+        $this->assertSame('""', $method->invoke(null, null));
+    }
+
+    public function test_timeout_kills_process_when_sigterm_is_ignored(): void
+    {
+        $process = new Process(['php', '-r', 'pcntl_signal(SIGTERM, SIG_IGN); sleep(30);'], null, null, null, 1);
+        $process->waitForKill = 0.1;
+        $process->usleep = 1000;
+
+        $result = $process->run();
+
+        $this->assertTrue($result->timedOut);
+    }
+
+    public function test_timeout_leaves_stderr_for_final_drain_phase(): void
+    {
+        $process = new Process(
+            ['php', '-r', 'fwrite(STDERR, str_repeat("z", 50000)); sleep(5);'],
+            null,
+            null,
+            null,
+            1
+        );
+        $process->waitForKill = 0.2;
+        $process->usleep = 1000;
+
+        $result = $process->run();
+
+        $this->assertTrue($result->timedOut);
+        $this->assertGreaterThan(0, strlen($result->stdErr));
+    }
+
+    public function test_wait_recovers_when_stream_select_fails()
+    {
+        $process = new Process(['sleep', '1']);
+        $start = new \ReflectionMethod($process, 'start');
+        $start->setAccessible(true);
+        $start->invoke($process);
+
+        $pipesProperty = new \ReflectionProperty($process, 'pipes');
+        $pipesProperty->setAccessible(true);
+        foreach ($pipesProperty->getValue($process) as $pipe) {
+            if (is_resource($pipe)) {
+                fclose($pipe);
+            }
+        }
+
+        $wait = new \ReflectionMethod($process, 'wait');
+        $wait->setAccessible(true);
+
+        $withInput = $wait->invoke($process);
+        $this->assertSame([[true, true], [true]], $withInput);
+
+        $inputClosedProperty = new \ReflectionProperty($process, 'inputClosed');
+        $inputClosedProperty->setAccessible(true);
+        $inputClosedProperty->setValue($process, true);
+
+        $withoutInput = $wait->invoke($process);
+        $this->assertSame([[true, true], []], $withoutInput);
+
+        $processProperty = new \ReflectionProperty($process, 'process');
+        $processProperty->setAccessible(true);
+        $processHandle = $processProperty->getValue($process);
+        if (is_resource($processHandle)) {
+            proc_terminate($processHandle);
+            proc_close($processHandle);
+        }
+    }
+
+    public function test_wait_handles_stream_select_exceptions()
+    {
+        $process = new class(['php', '-r', 'echo "ok";']) extends Process {
+            protected function wait()
+            {
+                try {
+                    throw new \Exception('select failed');
+                } catch (\Exception $e) {
+                    usleep($this->usleep);
+
+                    return $this->inputClosed ? [[true, true], []] : [[true, true], [true]];
+                }
+            }
+        };
+
+        $this->assertStringContainsString('ok', $process->mustRun()->stdOut);
     }
 }

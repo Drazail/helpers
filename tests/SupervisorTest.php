@@ -65,10 +65,13 @@ class SupervisorTest extends TestCase
         $this->supervisor = new SupervisorStub($this->laravel, $this->cache, $this->bus, $this->events, $this->exceptions);
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         Mockery::close();
-        pcntl_alarm(0);
+        if (function_exists('pcntl_alarm')) {
+            pcntl_alarm(0);
+        }
+        parent::tearDown();
     }
 
     public function test_it_pause_when_app_is_down_then_stop_on_queue_restart()
@@ -156,17 +159,3 @@ class SupervisorTest extends TestCase
     }
 }
 
-class SupervisorStub extends Supervisor
-{
-    public $paused = 0;
-
-    protected function kill($status = 0)
-    {
-        throw new \Exception('killed');
-    }
-
-    protected function pause()
-    {
-        $this->paused++;
-    }
-}

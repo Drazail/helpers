@@ -86,6 +86,8 @@ class UserModel extends Model
 {
     use HasCastables;
 
+    protected $table = 'user_models';
+
     protected $fillable = ['mobile'];
 
     protected static $castables = [

@@ -2,15 +2,13 @@
 
 namespace Halaei\Helpers\Listeners;
 
-use Exception;
-
 class RefreshDBConnections
 {
     public function handle()
     {
         try {
             \DB::rollBack(0);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             \DB::reconnect();
             report($e);
         }

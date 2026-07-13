@@ -33,8 +33,7 @@ class EloquentServiceProvider extends ServiceProvider
             return $model->newQuery()->getQuery()->batchUpdate($model->getKeyName(), $dirties);
         });
 
-        $version = $this->app->version();
-        Builder::macro('batchUpdate', function ($keyName, array $values) use ($version) {
+        Builder::macro('batchUpdate', function ($keyName, array $values) {
             $this->whereIn($keyName, array_keys($values));
 
             $columns = [];
@@ -64,11 +63,7 @@ class EloquentServiceProvider extends ServiceProvider
 
             $this->bindings['where'] = array_merge($params, $this->bindings['where']);
 
-            if (version_compare($version, '5.3.0') >= 0) {
-                $bindings = $this->bindings;
-            } else {
-                $bindings = array_values(array_merge($params, $this->getBindings()));
-            }
+            $bindings = $this->bindings;
 
             $sql = $this->grammar->compileUpdate($this, $cases);
 

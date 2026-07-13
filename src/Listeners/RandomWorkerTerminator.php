@@ -41,8 +41,6 @@ class RandomWorkerTerminator
     {
         $instance = new static($minTTL, $maxTTL);
 
-        Queue::looping(function () use ($instance) {
-            $instance->handle();
-        });
+        $instance->handle();
     }
 }

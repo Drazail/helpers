@@ -287,8 +287,16 @@ class Supervisor
         $this->events->dispatch(new SupervisorStopping($status));
 
         if ($exit) {
-            exit($status);
+            $this->exitProcess($status);
         }
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    protected function exitProcess(int $status): void
+    {
+        exit($status);
     }
 
     /**
@@ -299,10 +307,18 @@ class Supervisor
      */
     protected function kill($status = 0)
     {
+        $this->terminateProcess($status);
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    protected function terminateProcess(int $status = 0): void
+    {
         if (extension_loaded('posix')) {
             posix_kill(getmypid(), SIGKILL);
         }
 
-        exit($status);
+        $this->exitProcess($status);
     }
 }

@@ -53,8 +53,16 @@ class LogSlowQueries extends Command
             if ($this->option('once')) {
                 return;
             }
-            sleep($this->option('sleep'));
+            $this->sleepForPoll((int) $this->option('sleep'));
         }
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    protected function sleepForPoll(int $seconds): void
+    {
+        sleep($seconds);
     }
 
     private function stripSql($query)
