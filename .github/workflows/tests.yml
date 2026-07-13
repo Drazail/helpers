@@ -88,7 +88,13 @@ jobs:
           composer update orchestra/testbench --with-all-dependencies --no-interaction --prefer-dist
 
       - name: Verify Laravel version
-        run: composer show illuminate/support | grep "versions.*v${{ matrix.laravel }}\\."
+        run: |
+          php -r "
+            require 'vendor/autoload.php';
+            \$app = require 'vendor/orchestra/testbench-core/laravel/bootstrap/app.php';
+            \$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
+            echo \$app->version();
+          " | grep -E '^${{ matrix.laravel }}\.'
 
       - name: Run full behavioral suite
         run: vendor/bin/phpunit -c phpunit.ci.xml --testsuite HalaeiHelpers,Characterization
