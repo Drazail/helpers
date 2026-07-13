@@ -251,10 +251,14 @@ class ProcessTest extends TestCase
         $this->assertTrue($result->timedOut);
     }
 
-    public function test_run_returns_null_when_proc_open_fails()
+    public function test_run_returns_null_when_proc_open_fails(): void
     {
-        $process = new Process(['echo', 'ok'], '/definitely/missing/directory');
-
+        $process = new class(['echo', 'ok']) extends Process {
+            protected function start(): bool
+            {
+                return false;
+            }
+        };
         $this->assertNull($process->run());
     }
 
