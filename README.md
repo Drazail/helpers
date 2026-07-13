@@ -354,7 +354,7 @@ vendor/bin/phpunit
 
 On Windows, use PHP 8.1+ from [Laravel Herd](https://herd.laravel.com/) or similar (`php84 vendor/bin/phpunit`).
 
-### Docker (full suite — recommended)
+### Docker (full suite)
 
 Linux container with PHP 8.3, Redis 7, MySQL 8, `pcntl`, `pcov`, and the `unix` / `redis` test groups via `phpunit.docker.xml`.
 
@@ -379,7 +379,6 @@ composer test:coverage   # requires Linux, pcov, Redis, MySQL (see docker compos
 | `redis` | `redis:7-alpine` | Redis lock tests |
 | `mysql` | `mysql:8.0` | `insertIgnore` macro tests |
 
-If `docker compose build` fails with **403 Forbidden** from Docker Hub, configure a registry mirror in Docker Desktop (Settings → Docker Engine) or pull images manually once network access is available.
 
 ## License
 This package is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)
