@@ -19,7 +19,7 @@ class RefreshDBConnectionsTest extends TestCase
 
     public function test_handle_reconnects_when_rollback_fails(): void
     {
-        $exception = new \RuntimeException('rollback failed');
+        $exception = new \Error('rollback failed');
 
         DB::shouldReceive('rollBack')->once()->with(0)->andThrow($exception);
         DB::shouldReceive('reconnect')->once();

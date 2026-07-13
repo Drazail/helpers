@@ -193,7 +193,7 @@ class Process
         ];
         $this->startedAt = microtime(true);
         // 'exec' is used to make sure the process is the immediate child, otherwise it will be the child of a child sh process.
-        $this->process = proc_open('exec '.$this->getCommandLine(), $descriptors, $this->pipes, $this->cwd, $this->env);
+        $this->process = @proc_open('exec '.$this->getCommandLine(), $descriptors, $this->pipes, $this->cwd, $this->env);
         if (! is_resource($this->process)) {
             return false;
         }
@@ -223,15 +223,28 @@ class Process
             }
             // Write from buffer to pipe
             if ($this->inputCursor < strlen($this->inputBuffer)) {
-                $this->inputCursor += fwrite($this->pipes[0], substr($this->inputBuffer, $this->inputCursor), strlen($this->inputBuffer) - $this->inputCursor);
+                $written = @fwrite($this->pipes[0], substr($this->inputBuffer, $this->inputCursor), strlen($this->inputBuffer) - $this->inputCursor);
+                if ($written === false) {
+                    fclose($this->pipes[0]);
+                    $this->inputClosed = true;
+                } else {
+                    $this->inputCursor += $written;
+                }
             }
             return;
         }
         // Read from string input
-        if ($this->inputCursor < strlen($this->input)) {
-            $this->inputCursor += fwrite($this->pipes[0], substr($this->input, $this->inputCursor), strlen($this->input) - $this->inputCursor);
+        $input = (string) $this->input;
+        if ($this->inputCursor < strlen($input)) {
+            $written = @fwrite($this->pipes[0], substr($input, $this->inputCursor), strlen($input) - $this->inputCursor);
+            if ($written === false) {
+                fclose($this->pipes[0]);
+                $this->inputClosed = true;
+                return;
+            }
+            $this->inputCursor += $written;
         }
-        if ($this->inputCursor >= strlen($this->input)) {
+        if ($this->inputCursor >= strlen($input)) {
             fclose($this->pipes[0]);
             $this->inputClosed = true;
         }

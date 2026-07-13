@@ -25,14 +25,17 @@ use Halaei\Helpers\Process\ProcessResult;
 use Halaei\Helpers\Redis\Lock;
 use Halaei\Helpers\Supervisor\Events\LoopBeginning;
 use Halaei\Helpers\Supervisor\Events\LoopCompleting;
+use Halaei\Helpers\Supervisor\Events\Looping;
 use Halaei\Helpers\Supervisor\Events\RunFailed;
 use Halaei\Helpers\Supervisor\Events\RunSucceed;
 use Halaei\Helpers\Supervisor\Events\SupervisorStopping;
+use Halaei\Helpers\Supervisor\QuitsOnSignals;
 use Halaei\Helpers\Supervisor\Supervisor;
 use Halaei\Helpers\Supervisor\SupervisorOptions;
 use Halaei\Helpers\Supervisor\SupervisorState;
 use Halaei\Helpers\View\ViewFactory;
 use Halaei\Helpers\View\ViewServiceProvider;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -41,8 +44,8 @@ use ReflectionMethod;
  * Ensures the public API surface documented in docs/laravel-13-migration-plan.md
  * remains stable across Laravel 10–13 migration releases.
  *
- * @coversNothing
  */
+#[CoversNothing]
 class PublicApiContractTest extends TestCase
 {
     public function test_supervisor_public_api(): void
@@ -67,6 +70,7 @@ class PublicApiContractTest extends TestCase
     public function test_supervisor_event_classes_exist(): void
     {
         foreach ([
+            Looping::class,
             LoopBeginning::class,
             LoopCompleting::class,
             RunSucceed::class,
@@ -75,6 +79,13 @@ class PublicApiContractTest extends TestCase
         ] as $class) {
             $this->assertTrue(class_exists($class), "Missing event class: {$class}");
         }
+    }
+
+    public function test_quits_on_signals_protected_api(): void
+    {
+        $this->assertTraitHasProtectedMethods(QuitsOnSignals::class, [
+            'listenToSignals', 'stopListeningToSignals', 'quitIfSignaled',
+        ]);
     }
 
     public function test_objects_public_api(): void
@@ -158,6 +169,7 @@ class PublicApiContractTest extends TestCase
         $this->assertClassHasPublicMethods(ViewFactory::class, ['yieldContent']);
         $this->assertTrue(is_subclass_of(ViewServiceProvider::class, \Illuminate\View\ViewServiceProvider::class));
         $this->assertClassHasPublicMethods(ViewServiceProvider::class, ['registerFactory']);
+        $this->assertClassHasProtectedMethods(ViewServiceProvider::class, ['createFactory']);
     }
 
     public function test_process_and_crypt_public_api(): void
@@ -200,6 +212,23 @@ class PublicApiContractTest extends TestCase
     private function assertTraitHasPublicMethods(string $trait, array $methods): void
     {
         $this->assertClassHasPublicMethods($trait, $methods);
+    }
+
+    private function assertTraitHasProtectedMethods(string $trait, array $methods): void
+    {
+        $this->assertClassHasProtectedMethods($trait, $methods);
+    }
+
+    private function assertClassHasProtectedMethods(string $class, array $methods): void
+    {
+        $reflection = new ReflectionClass($class);
+        foreach ($methods as $method) {
+            $this->assertTrue($reflection->hasMethod($method), "{$class} missing protected method: {$method}");
+            $this->assertTrue(
+                $reflection->getMethod($method)->isProtected(),
+                "{$class}::{$method}() must be protected"
+            );
+        }
     }
 
     private function assertInterfaceHasMethod(string $interface, string $method): void

@@ -9,10 +9,9 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @group unix
- */
+#[Group('unix')]
 class BackupTableToFileSystemTest extends TestCase
 {
     use InvokesPrivateMethods;

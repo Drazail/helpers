@@ -5,12 +5,11 @@ namespace HalaeiTests;
 use Halaei\Helpers\Redis\Lock;
 use HalaeiTests\Support\RedisConfig;
 use Illuminate\Contracts\Cache\LockTimeoutException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 
-/**
- * @group redis
- */
+#[Group('redis')]
 class RedisLockTest extends TestCase
 {
     /**
@@ -107,10 +106,8 @@ class RedisLockTest extends TestCase
         $this->assertEquals(0, $this->redis->exists('test2'));
     }
 
-    /**
-     * @group redis
-     * @group stress
-     */
+    #[Group('redis')]
+    #[Group('stress')]
     public function test_under_stress()
     {
         $this->redis->disconnect();

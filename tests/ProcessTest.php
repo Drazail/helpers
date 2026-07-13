@@ -4,11 +4,10 @@ namespace HalaeiTests;
 
 use Halaei\Helpers\Process\Process;
 use Halaei\Helpers\Process\ProcessException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @group unix
- */
+#[Group('unix')]
 class ProcessTest extends TestCase
 {
     private static $randPath;
@@ -196,9 +195,7 @@ class ProcessTest extends TestCase
         }
     }
 
-    /**
-     * @group windows
-     */
+    #[Group('windows')]
     public function test_escape_argument_quotes_windows_special_characters()
     {
         if (DIRECTORY_SEPARATOR !== '\\') {
@@ -220,7 +217,6 @@ class ProcessTest extends TestCase
             protected function kill($status = 0)
             {
                 $this->terminated = true;
-                $this->status['running'] = false;
             }
         };
 

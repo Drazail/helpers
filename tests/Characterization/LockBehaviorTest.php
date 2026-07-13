@@ -4,14 +4,14 @@ namespace HalaeiTests\Characterization;
 
 use Halaei\Helpers\Redis\Lock;
 use HalaeiTests\Support\RedisConfig;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 
 /**
  * Characterization tests for Redis lock contention behavior.
- *
- * @group redis
  */
+#[Group('redis')]
 class LockBehaviorTest extends TestCase
 {
     private $redis;

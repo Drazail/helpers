@@ -268,7 +268,7 @@ while (! $lock->lock('critical_section', 0.1) {}
 // 2. Do some critical job
 //...
 // 3. Release the lock
-$lock->unlock('critical_section', 0.1);
+$lock->unlock('critical_section');
 ```
 
 ### Process

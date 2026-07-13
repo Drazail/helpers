@@ -37,6 +37,8 @@ class PhpRedisLockClientTest extends TestCase
 
             public array $expire = [];
 
+            public array $pexpire = [];
+
             public function brpoplpush($source, $destination, $timeout)
             {
                 $this->brpoplpush = compact('source', 'destination', 'timeout');
@@ -50,13 +52,22 @@ class PhpRedisLockClientTest extends TestCase
 
                 return true;
             }
+
+            public function pexpire($key, $milliseconds)
+            {
+                $this->pexpire = compact('key', 'milliseconds');
+
+                return true;
+            }
         };
 
         $client = new PhpRedisLockClient($redis);
         $client->brpoplpush('a', 'b', 2.5);
-        $client->expire('lock', 3.2);
+        $client->expire('fractional-lock', 3.2);
+        $client->expire('whole-lock', 3);
 
-        $this->assertSame(['source' => 'a', 'destination' => 'b', 'timeout' => 2], $redis->brpoplpush);
-        $this->assertSame(['key' => 'lock', 'seconds' => 3], $redis->expire);
+        $this->assertSame(['source' => 'a', 'destination' => 'b', 'timeout' => 2.5], $redis->brpoplpush);
+        $this->assertSame(['key' => 'fractional-lock', 'milliseconds' => 3200], $redis->pexpire);
+        $this->assertSame(['key' => 'whole-lock', 'seconds' => 3], $redis->expire);
     }
 }

@@ -16,10 +16,9 @@ use Illuminate\Contracts\Events\Dispatcher as Events;
 use Illuminate\Contracts\Foundation\Application;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @group pcntl
- */
+#[Group('pcntl')]
 class SupervisorCompleteTest extends \PHPUnit\Framework\TestCase
 {
     use SupervisorMocks;

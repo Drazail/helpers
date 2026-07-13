@@ -6,10 +6,9 @@ use Halaei\Helpers\Eloquent\Commands\RestoreDumpFromFileSystem;
 use HalaeiTests\Support\InvokesPrivateMethods;
 use HalaeiTests\Support\RunsConsoleCommands;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @group unix
- */
+#[Group('unix')]
 class RestoreDumpFromFileSystemTest extends TestCase
 {
     use InvokesPrivateMethods;

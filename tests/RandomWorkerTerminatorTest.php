@@ -46,7 +46,6 @@ class RandomWorkerTerminatorTest extends TestCase
 
         RandomWorkerTerminator::boot(0, 0);
 
-        event(new Looping('default', 'default'));
         sleep(1);
         event(new Looping('default', 'default'));
 

@@ -12,8 +12,8 @@ php -r "
     \$metrics = \$xml->project->metrics;
     \$covered = (int) \$metrics['coveredstatements'];
     \$total = (int) \$metrics['statements'];
-    \$percent = \$total > 0 ? round(($covered / \$total) * 100, 2) : 100;
-    echo \"Line coverage: {\$percent}% ({\$covered}/{\$total})\\n\";
+    \$percent = \$total > 0 ? round((\$covered / \$total) * 100, 2) : 100;
+    echo \"Line coverage: {\$percent}% ({\$covered}/{\$total})\n\";
     if (\$percent < 100) {
         exit(1);
     }

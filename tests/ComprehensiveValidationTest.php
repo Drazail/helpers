@@ -83,12 +83,14 @@ class ComprehensiveValidationTest extends TestCase
         RefreshDBConnections::boot();
         RandomWorkerTerminator::boot(1, 1);
 
-        $this->assertTrue(class_exists(Supervisor::class));
-        $this->assertTrue(class_exists(Lock::class));
+        $this->assertInstanceOf(Supervisor::class, $this->app->make(Supervisor::class));
 
-        if (extension_loaded('redis') || class_exists(Client::class)) {
-            $this->assertTrue(true, 'Redis lock available for manual/integration verification');
-        }
+        $redis = new Client([
+            'scheme' => 'tcp',
+            'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
+            'port' => getenv('REDIS_PORT') ?: 6379,
+        ]);
+        $this->assertInstanceOf(Lock::class, new Lock($redis));
     }
 
     public function test_data_collection_to_raw_in_validation_flow(): void

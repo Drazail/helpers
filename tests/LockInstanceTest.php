@@ -6,6 +6,7 @@ use Halaei\Helpers\Redis\Lock;
 use HalaeiTests\Support\RedisConfig;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Redis\RedisManager;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Predis\ClientInterface;
@@ -73,9 +74,7 @@ class LockInstanceTest extends TestCase
         $this->assertTrue($lock->lock('phpredis', 2));
     }
 
-    /**
-     * @group redis
-     */
+    #[Group('redis')]
     public function test_lock_uses_brpoplpush_fallback_when_eval_returns_false(): void
     {
         $redis = \Mockery::mock(ClientInterface::class);
@@ -88,9 +87,7 @@ class LockInstanceTest extends TestCase
         $this->assertTrue($lock->lock('fallback', 2));
     }
 
-    /**
-     * @group redis
-     */
+    #[Group('redis')]
     public function test_lock_integration_with_real_redis(): void
     {
         try {

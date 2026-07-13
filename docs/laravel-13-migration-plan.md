@@ -69,8 +69,8 @@ flowchart TB
 | **0** | Create this reference document | Done |
 | **1** | Baseline: characterization tests, `PublicApiContractTest`, coverage baseline | Done |
 | **2** | Compatibility fixes (Flysystem 3, Redis, View, batchUpdate) | Done |
-| **3** | 100% `src/` coverage + `ComprehensiveValidationTest` + CI matrix | Pending |
-| **4** | Release: `composer.json`, changelog, README, tag `v2.0.0` | Pending |
+| **3** | 100% `src/` coverage + `ComprehensiveValidationTest` + CI matrix | Done locally |
+| **4** | Release: `composer.json`, changelog, README, tag `v2.0.0` | Awaiting final commit, CI, and push |
 
 ---
 
@@ -209,7 +209,7 @@ All items below **must remain** in v2.0.0. The `PublicApiContractTest` (Phase 1)
 | `src/Redis/Lock.php` | Support phpredis via `instance()` adapter; keep `ClientInterface` constructor | None — Predis injection unchanged |
 | `src/View/ViewServiceProvider.php` | Override `createFactory()` only (not `registerFactory()`) | None — same provider swap |
 | `src/Eloquent/EloquentServiceProvider.php` | Remove dead `<5.3` branch; validate/fix `batchUpdate` bindings on L10–L13 | None — macro signatures unchanged |
-| `src/Supervisor/Supervisor.php` | Add `@deprecated` on `events->until()` usage (internal) | None |
+| `src/Supervisor/Supervisor.php` | Retain and characterize `events->until()` short-circuit behavior | None |
 | `src/Listeners/RefreshDBConnections.php` | Catch `\Throwable` instead of `Exception` | None — `handle()` signature unchanged |
 | `.travis.yml` | Removed | N/A |
 | `.github/workflows/tests.yml` | Added L10–L13 matrix + coverage gate | N/A |
@@ -317,6 +317,9 @@ Target after Phase 3: **100% line coverage** of `src/`.
 
 ## Phase 3 — Test Suite (100% Coverage)
 
+**Status:** Complete locally (2026-07-14). The Docker suite reports 100% classes,
+methods, and lines for `src/`; the L10–L13 matrix must pass after the final push.
+
 ### Infrastructure
 
 | File | Purpose |
@@ -328,7 +331,7 @@ Target after Phase 3: **100% line coverage** of `src/`.
 ### ComprehensiveValidationTest flow
 
 1. Register `EloquentServiceProvider` + `ViewServiceProvider`
-2. Run `Collection::update()` + `insertIgnore` on SQLite
+2. Run `Collection::update()` on SQLite/MySQL and `insertIgnore` on MySQL
 3. Instantiate `EloquentCache`, `Supervisor`, `Lock`, `DataObject`, `NumCrypt`, `Process`
 4. Call `RefreshDBConnections::boot()`, `RandomWorkerTerminator::boot()`
 5. Assert no exceptions; API contract preconditions still pass
@@ -338,7 +341,7 @@ Target after Phase 3: **100% line coverage** of `src/`.
 | Priority | File | Covers |
 |----------|------|--------|
 | P0 | `EloquentServiceProviderTest.php` | Macros + SQLite (replaces broken `BatchUpdateTest`) |
-| P0 | `ViewFactoryTest.php` | `@parent` disabled, provider binding |
+| P0 | `Characterization/ViewParentBehaviorTest.php` | `@parent` disabled, provider binding |
 | P0 | `RestoreDumpFromFileSystemTest.php` | Stream copy, mocked tar/mysql |
 | P1 | `RefreshDBConnectionsTest.php` | Queue looping, rollBack, reconnect |
 | P1 | `RandomWorkerTerminatorTest.php` | Worker stop after TTL |
@@ -371,6 +374,10 @@ vendor/bin/phpunit --coverage-text --coverage-clover=build/coverage.xml
 
 ## Phase 4 — Release
 
+**Status:** Release artifacts are prepared locally. The final audit fixes must be
+committed, the `v2.0.0` tag must point at that commit, and GitHub Actions must pass
+before the branch and tag are published.
+
 ### Changelog entry (v2.0.0)
 
 ```
@@ -402,15 +409,15 @@ git tag -a v2.0.0 -m "Laravel 10-13 support with preserved public API"
 | 12.* | ^10.0 | 8.2 |
 | 13.* | ^11.0 | 8.3 |
 
-**Services:** `redis:7`
+**Services:** `redis:7`, `mysql:8.0`
 
 ### Per-job commands
 
 ```bash
 composer install --no-interaction
-vendor/bin/phpunit --testsuite HalaeiHelpers
-vendor/bin/phpunit --filter PublicApiContractTest
-vendor/bin/phpunit --filter ComprehensiveValidationTest
+vendor/bin/phpunit -c phpunit.ci.xml --testsuite HalaeiHelpers,Characterization
+vendor/bin/phpunit -c phpunit.ci.xml --testsuite Contract
+vendor/bin/phpunit -c phpunit.ci.xml --testsuite Validation
 # Linux only:
 vendor/bin/phpunit --coverage-text --coverage-clover=build/coverage.xml
 ```
@@ -481,11 +488,13 @@ docker compose run --rm test --coverage-text
 - [ ] `composer require halaei/helpers:^2.0` resolves on Laravel 10, 11, 12, 13
 - [ ] `PublicApiContractTest` passes on all matrix versions
 - [ ] `ComprehensiveValidationTest` passes on all matrix versions
-- [ ] **100% line coverage** of `src/` (enforced in CI)
-- [ ] All 3 Artisan command signatures unchanged
-- [ ] All 3 macros behave identically on SQLite characterization fixtures
+- [x] **100% line coverage** of `src/` locally; CI enforcement configured
+- [x] All 3 Artisan command signatures unchanged
+- [x] `update`/`batchUpdate` characterized on SQLite and MySQL; `insertIgnore` on MySQL
 - [x] `docs/laravel-13-migration-plan.md` committed for future reference
-- [ ] v2.0.0 tagged; `^0.9` consumers unaffected
+- [ ] Final audit fixes committed and `v2.0.0` tag moved to that commit
+- [ ] GitHub Actions matrix and coverage gate pass on the final commit
+- [ ] Final branch and `v2.0.0` tag pushed; `^0.9` consumers unaffected
 
 ---
 
@@ -499,4 +508,5 @@ docker compose run --rm test --coverage-text
 
 ---
 
-*Last updated: Phase 0 — reference document created.*
+*Last updated: 2026-07-14 — final migration audit; local verification complete,
+remote CI and publication pending.*

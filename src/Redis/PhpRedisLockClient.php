@@ -25,11 +25,15 @@ final class PhpRedisLockClient
 
     public function brpoplpush($source, $destination, $timeout)
     {
-        return $this->redis->brpoplpush($source, $destination, (int) $timeout);
+        return $this->redis->brpoplpush($source, $destination, (float) $timeout);
     }
 
     public function expire($key, $seconds)
     {
+        if ((float) $seconds !== (float) (int) $seconds) {
+            return $this->redis->pexpire($key, (int) ceil($seconds * 1000));
+        }
+
         return $this->redis->expire($key, (int) $seconds);
     }
 }

@@ -4,10 +4,9 @@ namespace HalaeiTests;
 
 use Halaei\Helpers\Supervisor\QuitsOnSignals;
 use HalaeiTests\Support\InvokesPrivateMethods;
+use PHPUnit\Framework\Attributes\Group;
 
-/**
- * @group pcntl
- */
+#[Group('pcntl')]
 class QuitsOnSignalsTest extends TestCase
 {
     use InvokesPrivateMethods;

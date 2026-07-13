@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit backupGlobals="false"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         processIsolation="false"
+         stopOnFailure="false"
+>
+    <testsuites>
+        <testsuite name="HalaeiHelpers">
+            <directory>./tests</directory>
+            <exclude>./tests/Characterization</exclude>
+        </testsuite>
+        <testsuite name="Characterization">
+            <directory>./tests/Characterization</directory>
+        </testsuite>
+        <testsuite name="Contract">
+            <file>./tests/PublicApiContractTest.php</file>
+        </testsuite>
+        <testsuite name="Validation">
+            <file>./tests/ComprehensiveValidationTest.php</file>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">./src</directory>
+        </include>
+    </source>
+    <groups>
+        <exclude>
+            <group>stress</group>
+        </exclude>
+    </groups>
+</phpunit>
