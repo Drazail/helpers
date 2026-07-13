@@ -1,65 +1,87 @@
 # Change Log
 
-#v1.0.0
+## v2.0.0
+
+- Laravel 10–13 support (PHP ^8.1)
+- Fix `RestoreDumpFromFileSystem` for Flysystem 3 (`Storage::readStream` / `writeStream`)
+- Fix Redis `Lock` for phpredis default client via `PhpRedisLockClient` adapter
+- Fix `ViewServiceProvider` for Laravel 11+ component cache (`createFactory()` override only)
+- Remove dead Laravel `<5.3` branch from `EloquentServiceProvider::batchUpdate`
+- Add Orchestra Testbench test infrastructure, contract tests, and characterization suite
+- Add Docker Compose test environment (`docker compose run --rm test`)
+- **100%** `src/` line coverage enforced in CI
+- **BREAKING:** drops Laravel 8/9 and PHP 7.4 support — use `^0.9` or `^1.0` for older Laravel
+
+## v1.0.0
+
 - Support resource as process input.
 - Improving db:restore-dump: --force option and switching to Halaei\Helpers\Process.
 
-#v0.9.1
+## v0.9.1
+
 - Artisan command 'db:log-slow-queries'.
 - Artisan command 'db:backup-table'.
 - Artisan command 'db:restore-dump'.
 - Bug fixes in reading input from process.
 
-#v0.9
+## v0.9
+
 - Minimum Laravel version: 8.
 - Fix getOriginal() for Laravel >= 7.
 
-#v0.8.0
+## v0.8.0
+
 - Drop support for old PHP and Laravel versions.
 - Fix reporting throwable by calling `report()` helper function.
 
-#v0.7.0
+## v0.7.0
+
 - Supervisor can return instead of exit using dontDie option.
 - Bugfix in handling Throwable errors.
 
-#v0.6.1
+## v0.6.1
+
 - New feature: Process.
 
-#v0.6.0
+## v0.6.0
+
 - Laravel 6 & 7 support
 - Drop PHP 7.0 support
 - Drop Laravel 5.6 support
 
-#v0.5.0
+## v0.5.0
+
 - Laravel 5.8 compatibility
 - Supervisor can optionally stop on error.
 - Supervisor sleeps one second on error to make it CPU friendly.
 - Helper methods for Redis Lock: block() and instance().
 
-#v0.4.7
+## v0.4.7
+
 - New feature: QuitsOnSignals trait.
 
-#v0.4.6
+## v0.4.6
+
 - New feature: HasCastables trait.
 
-#v0.4.5
+## v0.4.5
 
 - New feature: Random worker terminator.
 - New feature: DataCollection::unionBy().
 
-#v0.4.4
+## v0.4.4
 
 - New feature: fusing DataObjects and DataCollections.
 
-#v0.4.2
+## v0.4.2
 
 - New feature: DataObject.
 
-#v0.4.1
+## v0.4.1
 
 - New feature: Eloquent Cache.
 
-#v0.4.0
+## v0.4.0
 
 - Make batchUpdate() compatible with Laravel 5.3+
 

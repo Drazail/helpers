@@ -187,6 +187,36 @@ class EloquentCacheTest extends TestCase
         $this->cache->shouldReceive('forget')->once()->with('elq-ch:cached_models:4');
         $repository->forget(4);
     }
+
+    public function test_forget_accepts_model_instance()
+    {
+        $repository = new EloquentCache($this->model, $this->cache, 'cached_models');
+        $model = Mockery::mock(CachedModel::class);
+        $model->shouldReceive('getKey')->once()->andReturn(9);
+        $this->cache->shouldReceive('forget')->once()->with('elq-ch:cached_models:9');
+        $repository->forget($model);
+    }
+
+    public function test_find_bypasses_invalid_cache_payload()
+    {
+        $repository = new EloquentCache($this->cacheable, $this->cache, 'cacheable_models');
+        $this->cache->shouldReceive('get')->once()->with('elq-ch:cacheable_models:5')->andReturn('invalid');
+        $this->cacheable->shouldReceive('newQuery')->once()->andReturnSelf();
+        $this->cacheable->shouldReceive('where')->once()->with('id', '=', 5)->andReturnSelf();
+        $this->cacheable->shouldReceive('firstOrFail')->once()->andReturnSelf();
+
+        $this->assertSame($this->cacheable, $repository->find(5));
+    }
+
+    public function test_find_by_secondary_key_without_cache_hits_database_directly()
+    {
+        $repository = new EloquentCache($this->model, $this->cache, 'cached_models');
+        $this->model->shouldReceive('newQuery')->once()->andReturnSelf();
+        $this->model->shouldReceive('where')->once()->with(['column1' => 'value1'])->andReturnSelf();
+        $this->model->shouldReceive('firstOrFail')->once()->andReturnSelf();
+
+        $this->assertSame($this->model, $repository->findBySecondaryKey(['column1' => 'value1'], false));
+    }
 }
 
 class CachedModel extends Model

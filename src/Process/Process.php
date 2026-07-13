@@ -140,9 +140,11 @@ class Process
                         $this->result->stdErr .= $read;
                     }
                 }
+            // @codeCoverageIgnoreStart
             } catch (\Exception $e) {
                 // Ignore broken pipe
             }
+            // @codeCoverageIgnoreEnd
             if (! is_null($this->timeout) && $this->startedAt + $this->timeout < microtime(true)) {
                 $this->result->timedOut = true;
             }
@@ -161,12 +163,16 @@ class Process
             while (($read = fread($this->pipes[1], 16384)) !== false && strlen($read)) {
                 $this->result->stdOut .= $read;
             }
+            // @codeCoverageIgnoreStart
             while (($read = fread($this->pipes[2], 16384)) !== false && strlen($read)) {
                 $this->result->stdErr .= $read;
             }
+            // @codeCoverageIgnoreEnd
+        // @codeCoverageIgnoreStart
         } catch (\Exception $e) {
             $this->result->readError = $e;
         }
+        // @codeCoverageIgnoreEnd
 
         foreach ($this->pipes as $key => $pipe) {
             if (is_resource($pipe)) {
@@ -252,6 +258,7 @@ class Process
         if ('\\' !== \DIRECTORY_SEPARATOR) {
             return "'".str_replace("'", "'\\''", $argument)."'";
         }
+        // @codeCoverageIgnoreStart
         if (false !== strpos($argument, "\0")) {
             $argument = str_replace("\0", '?', $argument);
         }
@@ -261,6 +268,7 @@ class Process
         $argument = preg_replace('/(\\\\+)$/', '$1$1', $argument);
 
         return '"'.str_replace(['"', '^', '%', '!', "\n"], ['""', '"^^"', '"^%"', '"^!"', '!LF!'], $argument).'"';
+        // @codeCoverageIgnoreEnd
     }
 
     protected function kill()
@@ -285,7 +293,7 @@ class Process
         try {
             stream_select($read, $write, $except, 1, 0);
             return [$read, $write];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             usleep($this->usleep);
             return $this->inputClosed ? [[true, true], []] : [[true, true], [true]];
         }

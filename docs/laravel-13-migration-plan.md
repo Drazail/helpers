@@ -67,8 +67,8 @@ flowchart TB
 | Phase | Description | Status |
 |-------|-------------|--------|
 | **0** | Create this reference document | Done |
-| **1** | Baseline: characterization tests, `PublicApiContractTest`, coverage baseline | Pending |
-| **2** | Compatibility fixes (Flysystem 3, Redis, View, batchUpdate) | Pending |
+| **1** | Baseline: characterization tests, `PublicApiContractTest`, coverage baseline | Done |
+| **2** | Compatibility fixes (Flysystem 3, Redis, View, batchUpdate) | Done |
 | **3** | 100% `src/` coverage + `ComprehensiveValidationTest` + CI matrix | Pending |
 | **4** | Release: `composer.json`, changelog, README, tag `v2.0.0` | Pending |
 
@@ -219,6 +219,29 @@ All items below **must remain** in v2.0.0. The `PublicApiContractTest` (Phase 1)
 ---
 
 ## Phase 1 — Baseline (Before Code Changes)
+
+**Status:** Complete (2026-07-13)
+
+**Deliverables added:**
+- `tests/TestCase.php` — Orchestra Testbench base (Laravel 11 via testbench ^9)
+- `tests/PublicApiContractTest.php` — reflection-based public API gate
+- `tests/ComprehensiveValidationTest.php` — end-to-end module smoke test
+- `tests/Characterization/` — Supervisor, macros, View, DataObject, Lock behavior tests
+- `tests/SupervisorStub.php` — shared supervisor test double
+- `phpunit.xml` — PHPUnit 10 coverage config, test suites, redis/pcntl groups
+- `composer.json` — dev deps: testbench ^9, phpunit ^10.5, predis ^2.2, PHP ^8.1
+
+**Coverage baseline:** ~60–70% of `src/` (full 100% target in Phase 3). Run with Xdebug/pcov:
+`php84 vendor/bin/phpunit --coverage-text`
+
+**Local test command (PHP 8.2+ required):**
+`C:\Users\Drazail\.config\herd\bin\php84\php.exe vendor\bin\phpunit --testsuite Contract`
+`C:\Users\Drazail\.config\herd\bin\php84\php.exe vendor\bin\phpunit --testsuite Validation`
+`C:\Users\Drazail\.config\herd\bin\php84\php.exe vendor\bin\phpunit --testsuite Characterization`
+
+**Minimal compatibility tweak for baseline:** `HasCastables::offsetUnset(): void` (Laravel 11 signature).
+
+**Removed:** `tests/BatchUpdateTest.php` (replaced by `Characterization/EloquentMacroBehaviorTest.php`).
 
 **Principle:** Capture current behavior first so migration fixes cannot silently drop features.
 
@@ -399,6 +422,45 @@ vendor/bin/phpunit --coverage-text --coverage-clover=build/coverage.xml
 composer require --dev orchestra/testbench:^9.0
 vendor/bin/phpunit
 ```
+
+### Docker test environment (recommended)
+
+Linux container with PHP 8.3, Redis 7, MySQL 8, pcntl, and pcov. Runs the full suite including `@group redis` and `@group pcntl` via `phpunit.docker.xml`.
+
+```bash
+# Build and run all tests
+docker compose run --rm test
+
+# Specific suite
+docker compose run --rm test --testsuite Contract
+docker compose run --rm test --testsuite Validation
+docker compose run --rm test --testsuite Characterization
+
+# With coverage
+docker compose run --rm test --coverage-text
+```
+
+**Services:**
+
+| Service | Image | Purpose |
+|---------|-------|---------|
+| `test` | `docker/Dockerfile` (PHP 8.3-cli) | PHPUnit + Composer |
+| `redis` | `redis:7-alpine` | Redis lock tests |
+| `mysql` | `mysql:8.0` | `insertIgnore` macro tests |
+
+**Environment (set in `docker-compose.yml`):**
+
+- `REDIS_HOST=redis` — used by `HalaeiTests\Support\RedisConfig`
+- `DB_HOST=mysql` — switches Testbench to MySQL instead of SQLite in-memory
+
+**Files:**
+
+- `docker/Dockerfile` — PHP extensions: pcntl, pdo_mysql, pdo_sqlite, pcov, redis
+- `docker/entrypoint.sh` — `composer install`, wait for MySQL, run PHPUnit
+- `docker-compose.yml` — orchestrates test + redis + mysql
+- `phpunit.docker.xml` — same suites as `phpunit.xml` but includes redis/pcntl/unix groups
+
+**Troubleshooting:** If image pulls fail with `403 Forbidden` from `production.cloudfront.docker.com`, Docker Hub CDN access is blocked on your network. Use a registry mirror, VPN, or pre-pull images on a machine with access, then retry `docker compose build`.
 
 ---
 

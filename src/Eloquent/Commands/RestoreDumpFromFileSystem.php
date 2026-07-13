@@ -8,7 +8,6 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use League\Flysystem\MountManager;
 
 class RestoreDumpFromFileSystem extends Command
 {
@@ -33,14 +32,27 @@ class RestoreDumpFromFileSystem extends Command
 
     private function mount(): string
     {
-        $mountManager = new MountManager([
-            'remote' => Storage::disk($this->argument('disk'))->getDriver(),
-            'local' => Storage::disk('local')->getDriver(),
-        ]);
         $path = $this->argument('path');
-        Storage::disk('local')->delete($path);
-        $mountManager->copy('remote://'. $path, 'local://'. $path);
-        return Storage::disk('local')->path($path);
+        $remote = Storage::disk($this->argument('disk'));
+        $local = Storage::disk('local');
+
+        $local->delete($path);
+
+        $stream = $remote->readStream($path);
+
+        if ($stream === false) {
+            throw new \RuntimeException("Unable to read dump stream from disk [{$this->argument('disk')}] at path [{$path}].");
+        }
+
+        try {
+            $local->writeStream($path, $stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+
+        return $local->path($path);
     }
 
     private function uncompress(string $src)

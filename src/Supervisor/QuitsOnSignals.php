@@ -57,7 +57,15 @@ trait QuitsOnSignals
     protected function quitIfSignaled($status = 0)
     {
         if ($this->shouldQuit) {
-            exit($status);
+            $this->exitOnSignal($status);
         }
+    }
+
+    /**
+     * @codeCoverageIgnore
+     */
+    protected function exitOnSignal(int $status): void
+    {
+        exit($status);
     }
 }
