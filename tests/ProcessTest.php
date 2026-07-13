@@ -182,6 +182,20 @@ class ProcessTest extends TestCase
         $this->assertNull($process->run());
     }
 
+    public function test_start_returns_false_when_proc_open_fails_with_invalid_cwd(): void
+    {
+        if (PHP_VERSION_ID < 80300) {
+            $this->markTestSkipped('proc_open returns false for invalid cwd only since PHP 8.3');
+        }
+
+        $process = new Process(['echo', 'ok'], '/definitely/missing/directory');
+
+        $start = new \ReflectionMethod($process, 'start');
+        $start->setAccessible(true);
+
+        $this->assertFalse($start->invoke($process));
+    }
+
     public function test_must_run_throws_when_process_times_out()
     {
         $process = new Process(['sleep', '5'], null, null, null, 1);
@@ -249,17 +263,6 @@ class ProcessTest extends TestCase
         $result = $process->run();
 
         $this->assertTrue($result->timedOut);
-    }
-
-    public function test_run_returns_null_when_proc_open_fails(): void
-    {
-        $process = new class(['echo', 'ok']) extends Process {
-            protected function start(): bool
-            {
-                return false;
-            }
-        };
-        $this->assertNull($process->run());
     }
 
     public function test_timeout_leaves_stderr_for_final_drain_phase(): void
