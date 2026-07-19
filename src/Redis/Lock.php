@@ -13,15 +13,8 @@ class Lock
      */
     protected $redis;
 
-    /**
-     * @param  ClientInterface|PhpRedisLockClient  $redis
-     */
-    public function __construct($redis)
+    public function __construct(ClientInterface|PhpRedisLockClient $redis)
     {
-        if (! $redis instanceof ClientInterface && ! $redis instanceof PhpRedisLockClient) {
-            throw new \InvalidArgumentException('Lock requires a Predis ClientInterface or phpredis client from Lock::instance().');
-        }
-
         $this->redis = $redis;
     }
 

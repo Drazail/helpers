@@ -8,7 +8,7 @@ class RefreshDBConnections
     {
         try {
             \DB::rollBack(0);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             \DB::reconnect();
             report($e);
         }

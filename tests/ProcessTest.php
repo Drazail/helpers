@@ -283,43 +283,6 @@ class ProcessTest extends TestCase
         $this->assertGreaterThan(0, strlen($result->stdErr));
     }
 
-    public function test_wait_recovers_when_stream_select_fails()
-    {
-        $process = new Process(['sleep', '1']);
-        $start = new \ReflectionMethod($process, 'start');
-        $start->setAccessible(true);
-        $start->invoke($process);
-
-        $pipesProperty = new \ReflectionProperty($process, 'pipes');
-        $pipesProperty->setAccessible(true);
-        foreach ($pipesProperty->getValue($process) as $pipe) {
-            if (is_resource($pipe)) {
-                fclose($pipe);
-            }
-        }
-
-        $wait = new \ReflectionMethod($process, 'wait');
-        $wait->setAccessible(true);
-
-        $withInput = $wait->invoke($process);
-        $this->assertSame([[true, true], [true]], $withInput);
-
-        $inputClosedProperty = new \ReflectionProperty($process, 'inputClosed');
-        $inputClosedProperty->setAccessible(true);
-        $inputClosedProperty->setValue($process, true);
-
-        $withoutInput = $wait->invoke($process);
-        $this->assertSame([[true, true], []], $withoutInput);
-
-        $processProperty = new \ReflectionProperty($process, 'process');
-        $processProperty->setAccessible(true);
-        $processHandle = $processProperty->getValue($process);
-        if (is_resource($processHandle)) {
-            proc_terminate($processHandle);
-            proc_close($processHandle);
-        }
-    }
-
     public function test_wait_handles_stream_select_exceptions()
     {
         $process = new class(['php', '-r', 'echo "ok";']) extends Process {

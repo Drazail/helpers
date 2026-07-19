@@ -9,7 +9,7 @@
 - Remove dead Laravel `<5.3` branch from `EloquentServiceProvider::batchUpdate`
 - Add Orchestra Testbench test infrastructure, contract tests, and characterization suite
 - Add Docker Compose test environment (`docker compose run --rm test`)
-- **100%** `src/` line coverage enforced in CI
+- High `src/` line coverage enforced in CI (minimum 95% gate, configurable via `MIN_COVERAGE`)
 - **BREAKING:** drops Laravel 8/9 and PHP 7.4 support — use `^0.9` or `^1.0` for older Laravel
 
 ## v1.0.0

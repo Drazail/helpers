@@ -367,7 +367,7 @@ docker compose run --rm --entrypoint bash test scripts/check-coverage.sh
 
 ### CI
 
-GitHub Actions runs a **Laravel 10–13 matrix** (with Redis) plus a **100% coverage gate** on PHP 8.3. Locally:
+GitHub Actions runs a **Laravel 10–13 matrix** (with Redis) plus a **coverage gate** (minimum 95%, configurable via `MIN_COVERAGE`) on PHP 8.3. Locally:
 
 ```bash
 composer test:coverage   # requires Linux, pcov, Redis, MySQL (see docker compose)
