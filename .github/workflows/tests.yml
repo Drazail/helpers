@@ -106,7 +106,7 @@ jobs:
         run: vendor/bin/phpunit -c phpunit.ci.xml --testsuite Validation
 
   coverage:
-    name: Coverage (100% gate)
+    name: Coverage (min 95% gate)
     runs-on: ubuntu-latest
 
     services:

@@ -140,11 +140,9 @@ class Process
                         $this->result->stdErr .= $read;
                     }
                 }
-            // @codeCoverageIgnoreStart
             } catch (\Exception $e) {
                 // Ignore broken pipe
             }
-            // @codeCoverageIgnoreEnd
             if (! is_null($this->timeout) && $this->startedAt + $this->timeout < microtime(true)) {
                 $this->result->timedOut = true;
             }
@@ -163,16 +161,12 @@ class Process
             while (($read = fread($this->pipes[1], 16384)) !== false && strlen($read)) {
                 $this->result->stdOut .= $read;
             }
-            // @codeCoverageIgnoreStart
             while (($read = fread($this->pipes[2], 16384)) !== false && strlen($read)) {
                 $this->result->stdErr .= $read;
             }
-            // @codeCoverageIgnoreEnd
-        // @codeCoverageIgnoreStart
         } catch (\Exception $e) {
             $this->result->readError = $e;
         }
-        // @codeCoverageIgnoreEnd
 
         foreach ($this->pipes as $key => $pipe) {
             if (is_resource($pipe)) {
@@ -193,7 +187,7 @@ class Process
         ];
         $this->startedAt = microtime(true);
         // 'exec' is used to make sure the process is the immediate child, otherwise it will be the child of a child sh process.
-        $this->process = @proc_open('exec '.$this->getCommandLine(), $descriptors, $this->pipes, $this->cwd, $this->env);
+        $this->process = proc_open('exec '.$this->getCommandLine(), $descriptors, $this->pipes, $this->cwd, $this->env);
         if (! is_resource($this->process)) {
             return false;
         }
@@ -221,9 +215,10 @@ class Process
                     $this->inputClosed = true;
                 }
             }
-            // Write from buffer to pipe
+            // Write from buffer to pipe. fwrite returns false when the child
+            // has closed stdin (broken pipe); in that case stop writing.
             if ($this->inputCursor < strlen($this->inputBuffer)) {
-                $written = @fwrite($this->pipes[0], substr($this->inputBuffer, $this->inputCursor), strlen($this->inputBuffer) - $this->inputCursor);
+                $written = fwrite($this->pipes[0], substr($this->inputBuffer, $this->inputCursor), strlen($this->inputBuffer) - $this->inputCursor);
                 if ($written === false) {
                     fclose($this->pipes[0]);
                     $this->inputClosed = true;
@@ -236,7 +231,7 @@ class Process
         // Read from string input
         $input = (string) $this->input;
         if ($this->inputCursor < strlen($input)) {
-            $written = @fwrite($this->pipes[0], substr($input, $this->inputCursor), strlen($input) - $this->inputCursor);
+            $written = fwrite($this->pipes[0], substr($input, $this->inputCursor), strlen($input) - $this->inputCursor);
             if ($written === false) {
                 fclose($this->pipes[0]);
                 $this->inputClosed = true;
@@ -271,7 +266,6 @@ class Process
         if ('\\' !== \DIRECTORY_SEPARATOR) {
             return "'".str_replace("'", "'\\''", $argument)."'";
         }
-        // @codeCoverageIgnoreStart
         if (false !== strpos($argument, "\0")) {
             $argument = str_replace("\0", '?', $argument);
         }
@@ -281,7 +275,6 @@ class Process
         $argument = preg_replace('/(\\\\+)$/', '$1$1', $argument);
 
         return '"'.str_replace(['"', '^', '%', '!', "\n"], ['""', '"^^"', '"^%"', '"^!"', '!LF!'], $argument).'"';
-        // @codeCoverageIgnoreEnd
     }
 
     protected function kill()
@@ -306,7 +299,7 @@ class Process
         try {
             stream_select($read, $write, $except, 1, 0);
             return [$read, $write];
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             usleep($this->usleep);
             return $this->inputClosed ? [[true, true], []] : [[true, true], [true]];
         }

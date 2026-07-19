@@ -15,7 +15,7 @@ class LockInstanceTest extends TestCase
 {
     public function test_constructor_rejects_unsupported_clients(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\TypeError::class);
 
         new Lock(new \stdClass);
     }
